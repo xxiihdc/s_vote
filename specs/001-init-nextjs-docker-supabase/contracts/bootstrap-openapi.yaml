@@ -1,0 +1,60 @@
+openapi: 3.0.3
+info:
+  title: S Vote Supabase Edge Function API
+  version: 0.1.0
+  description: Contract baseline for admin operations through Supabase Edge Functions.
+servers:
+  - url: https://<project-ref>.supabase.co/functions/v1
+paths:
+  /admin-task:
+    post:
+      summary: Execute admin-privileged operation via Edge Function
+      operationId: executeAdminTask
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminTaskRequest'
+      responses:
+        '200':
+          description: Admin operation executed successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminTaskResponse'
+        '401':
+          description: Unauthorized request for admin operation.
+        '403':
+          description: Forbidden by role policy.
+components:
+  schemas:
+    AdminTaskRequest:
+      type: object
+      required:
+        - action
+        - payload
+        - requestId
+      properties:
+        action:
+          type: string
+          enum: [recountVotes, resetPoll, archivePoll]
+          example: recountVotes
+        payload:
+          type: object
+        requestId:
+          type: string
+
+    AdminTaskResponse:
+      type: object
+      required:
+        - status
+        - requestId
+      properties:
+        status:
+          type: string
+          enum: [success, failed]
+        requestId:
+          type: string
+        result:
+          type: object
