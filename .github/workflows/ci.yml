@@ -1,0 +1,47 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  quality-gates:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm run test
+
+      - name: Vercel/Next build
+        run: npm run build
+
+      - name: Docker build and startup health-check
+        run: |
+          docker build --target runner -t s-vote:ci .
+          docker run -d --rm \
+            -e NEXT_PUBLIC_SUPABASE_URL=https://placeholder.supabase.co \
+            -e NEXT_PUBLIC_SUPABASE_ANON_KEY=placeholder \
+            -e APP_URL=http://localhost:3000 \
+            -p 3001:3000 --name s-vote-ci s-vote:ci
+          sleep 8
+          docker ps
+          docker logs s-vote-ci
+          docker stop s-vote-ci

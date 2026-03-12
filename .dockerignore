@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.github
+.specify
+specs
+coverage
+*.log
+.env*
+!.env.example
+Dockerfile*
+docker-compose*
+.dockerignore
+README.md

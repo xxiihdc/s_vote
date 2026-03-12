@@ -1,0 +1,45 @@
+{
+  "name": "s-vote",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "vercel-build": "next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:all": "npm run typecheck && npm run lint && npm run test",
+    "test:regression": "npm run test:all && bash tests/integration/vercel-build.test.sh",
+    "supabase:db:push": "supabase db push",
+    "supabase:function:deploy": "supabase functions deploy admin-task",
+    "ci:check": "bash scripts/ci-check.sh"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.49.4",
+    "next": "15.5.12",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@testing-library/jest-dom": "^6",
+    "@testing-library/react": "^16",
+    "@types/node": "^22",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "@vitest/coverage-v8": "^3.0.0",
+    "eslint": "^9",
+    "eslint-config-next": "15.5.12",
+    "jsdom": "^26",
+    "prettier": "^3.5.0",
+    "supabase": "^2.78.1",
+    "typescript": "^5",
+    "vitest": "^3.0.0"
+  }
+}
