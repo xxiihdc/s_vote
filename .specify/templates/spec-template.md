@@ -154,11 +154,14 @@
 
 - Define required logs, correlation IDs, and health/alert signals for this feature.
 - Identify any sensitive fields that MUST be redacted from logs.
+- If deadline-constrained, explicitly mark deferred health/alert signals with owner and due date
+  via Deadline Waiver.
 
 ### Docker and Deployment Impact
 
 - State whether Dockerfile/compose changes are required.
 - Specify how this feature is validated in a containerized environment.
+- If container validation is deferred for deadline reasons, include waiver scope, owner, and due date.
 
 ### Key Entities *(include if feature involves data)*
 
@@ -170,9 +173,11 @@
 - **Functional Completeness**: 100% of the defined mandatory requirements are implemented and accessible via the UI/API.
 - **Type Safety**: The project compiles with zero TypeScript errors in strict mode, and all external data (API/Database) is validated at the boundary.
 - **Performance Benchmark**: Core user interactions (e.g., data submission, page transitions) achieve a $p95$ latency under the defined threshold (e.g., 300ms).
+  - If deadline-constrained, this criterion MAY be marked as deferred with Deadline Waiver details.
 - **Security Compliance**: No sensitive credentials (API Keys, Secrets) are exposed in the client-side bundle, and Row Level Security (RLS) is verified for all protected tables.
 - **Test Coverage**: Critical business logic and edge cases are covered by automated tests (Unit or Integration) with a passing rate of 100%.
 - **Build & Deployment**: The application successfully builds in a CI/CD environment and runs without environment-related crashes on the target platform.
+  - If full Docker/runtime validation is deferred, document fallback checks and waiver due date.
 - **Error Resilience**: The system handles failed requests gracefully with user-friendly error messages and maintains state integrity during partial outages.
 
 ### Measurable Outcomes

@@ -120,7 +120,7 @@
 - [X] T038 [P] Add CI pipeline example for typecheck/lint/test/vercel build in .github/workflows/ci.yml
 - [X] T039 [Security] Add Supabase CLI operational checklist for migrations/functions in specs/001-init-nextjs-docker-supabase/quickstart.md
 - [X] T043 Add Docker build and container startup health-check validation to scripts/ci-check.sh and .github/workflows/ci.yml
-- [ ] T044 [P] Validate Supabase CLI migration apply locally with supabase db push
+- [ ] T044 [P] Validate Supabase CLI migration apply locally with supabase db reset
 - [ ] T045 [P] Validate Supabase CLI Edge Function deploy locally with supabase functions deploy admin-task
 
 ---

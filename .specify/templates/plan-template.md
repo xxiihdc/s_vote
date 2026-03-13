@@ -23,7 +23,7 @@
 **Testing**: Vitest/Jest  
 **Target Platform**: Dockerized Linux containers on cloud runtime  
 **Project Type**: Next.js full-stack web app  
-**Performance Goals**: vote submission p95 < 300ms  
+**Performance Goals**: vote submission p95 < 300ms (or mark as deferred with Deadline Waiver)  
 **Constraints**: RLS enforced on all vote tables, zero secret leakage  
 **Scale/Scope**: peak concurrent voters and election size
 
@@ -31,11 +31,12 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-- TypeScript Contract Gate: Shared types/schemas identified for frontend, backend, and data access.
-- Supabase Security Gate: RLS impact and role boundaries documented for all data changes.
-- Test Gate: Required unit/integration/regression coverage listed for vote-critical behavior.
-- Observability Gate: Logging, correlation IDs, and health signals defined for new runtime paths.
-- Docker Reproducibility Gate: Build/start validation approach defined for local and CI execution.
+- TypeScript Contract Gate (MANDATORY): Shared types/schemas identified for frontend, backend, and data access.
+- Supabase Security Gate (MANDATORY): RLS impact and role boundaries documented for all data changes.
+- Test Gate (MANDATORY): Required unit/integration/regression coverage listed for vote-critical behavior.
+- Observability Gate (RECOMMENDED): Logging/correlation IDs required; health signals may be deferred with Deadline Waiver.
+- Docker Reproducibility Gate (RECOMMENDED): Build/start validation may be deferred with Deadline Waiver.
+- Performance Gate (RECOMMENDED): Benchmark validation against target SLOs may be deferred with Deadline Waiver.
 
 ## Project Structure
 
@@ -78,7 +79,7 @@ directories captured above]
 
 ## Complexity Tracking
 
-> **Fill ONLY if Constitution Check has violations that must be justified**
+> **Fill ONLY if Constitution Check has violations that must be justified, including any Deadline Waiver**
 
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|

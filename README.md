@@ -115,7 +115,7 @@ LOG_LEVEL=info
 ### 4. Apply Migrations Locally
 
 ```bash
-supabase db push
+npm run supabase:db:reset:local
 ```
 
 ### 5. Serve Or Deploy Edge Functions
@@ -142,7 +142,7 @@ supabase stop
 
 1. `supabase start`
 2. Update `.env.local` with local values from `supabase status`
-3. `supabase db push`
+3. `npm run supabase:db:reset:local`
 4. `npm run dev`
 5. `supabase functions serve admin-task --no-verify-jwt`
 
@@ -161,9 +161,12 @@ This validates TypeScript, ESLint, tests, Next.js build, and Docker startup chec
 Migrations and Edge Function deploy are managed with Supabase CLI:
 
 ```bash
-supabase db push
+npm run supabase:db:reset:local
+npm run supabase:db:push
 supabase functions deploy admin-task
 ```
+
+Use `npm run supabase:db:reset:local` for the local Docker-based stack. Use `npm run supabase:db:push` only after linking this workspace to a remote Supabase project with `supabase link --project-ref <project-ref> --password <db-password>`.
 
 ## Security Boundary
 

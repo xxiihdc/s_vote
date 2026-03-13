@@ -1,0 +1,94 @@
+openapi: 3.0.3
+info:
+  title: Anonymous Vote Token Result API
+  version: 1.0.0
+paths:
+  /api/votes:
+    post:
+      summary: Create anonymous vote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, options]
+              properties:
+                question:
+                  type: string
+                  minLength: 1
+                  maxLength: 1000
+                options:
+                  type: array
+                  minItems: 2
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 300
+      responses:
+        '201':
+          description: Vote created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [voteId, resultUrl]
+                properties:
+                  voteId:
+                    type: string
+                    format: uuid
+                  resultUrl:
+                    type: string
+                  tokenExpiresAt:
+                    type: string
+                    format: date-time
+        '400':
+          description: Validation error
+  /api/votes/results/{token}:
+    get:
+      summary: View vote results by token URL
+      parameters:
+        - name: token
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Results payload
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [voteId, question, results]
+                properties:
+                  voteId:
+                    type: string
+                    format: uuid
+                  question:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      type: object
+                      required: [optionId, label, votes, percentage]
+                      properties:
+                        optionId:
+                          type: string
+                          format: uuid
+                        label:
+                          type: string
+                        votes:
+                          type: integer
+                          minimum: 0
+                        percentage:
+                          type: number
+                          minimum: 0
+                          maximum: 100
+                  updatedAt:
+                    type: string
+                    format: date-time
+        '404':
+          description: Invalid token or vote unavailable
+        '410':
+          description: Token expired

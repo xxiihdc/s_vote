@@ -1,15 +1,11 @@
 <!--
 Sync Impact Report
-- Version change: template-placeholder -> 1.0.0
+- Version change: 1.0.0 -> 2.0.0
 - Modified principles:
-  - template-placeholder-1 -> I. TypeScript End-to-End Contracts
-  - template-placeholder-2 -> II. Supabase Security by Default
-  - template-placeholder-3 -> III. Test Gates Are Mandatory
-  - template-placeholder-4 -> IV. Observability and Operational Readiness
-  - template-placeholder-5 -> V. Reproducible Docker Delivery
+  - IV. Observability and Operational Readiness -> IV. Pragmatic Observability and Operational Readiness
+  - V. Reproducible Docker Delivery -> V. Pragmatic Docker Delivery
 - Added sections:
-	- Stack and Security Constraints
-	- Delivery Workflow and Quality Gates
+	- Deadline Waiver Process
 - Removed sections:
 	- None
 - Templates requiring updates:
@@ -46,17 +42,21 @@ integration tests for Next.js API routes and Supabase interactions, and regressi
 integrity rules. Pull requests MUST fail when test suites fail; no exceptions for feature merges.
 Rationale: Voting workflows are correctness-sensitive and require deterministic verification.
 
-### IV. Observability and Operational Readiness
+### IV. Pragmatic Observability and Operational Readiness
 Production paths MUST emit structured logs with request correlation identifiers and actionable
 error context without exposing secrets or personal data. Health checks and runbook-relevant
-signals MUST exist for API and background operations before release.
-Rationale: Fast incident triage is required to maintain trust and availability during voting events.
+signals SHOULD exist for API and background operations before release and MAY be deferred when
+deadline pressure is documented through the Deadline Waiver Process.
+Rationale: Fast incident triage is important, but deadline-constrained delivery may prioritize
+core functionality while tracking operational hardening as explicit follow-up work.
 
-### V. Reproducible Docker Delivery
+### V. Pragmatic Docker Delivery
 Local, CI, and deployment environments MUST use Docker-based workflows with pinned base
-images and explicit environment configuration. A change is not release-ready unless it can build
-and start via the project Docker configuration and pass defined health checks.
-Rationale: Reproducible containers reduce environment drift and deployment-time failures.
+images and explicit environment configuration. Docker build/start validation SHOULD run before
+release and MAY be deferred under deadline pressure when a documented waiver includes owner and
+due date.
+Rationale: Reproducible containers reduce environment drift, while controlled deferral supports
+time-critical releases.
 
 ## Stack and Security Constraints
 
@@ -71,15 +71,32 @@ Rationale: Reproducible containers reduce environment drift and deployment-time 
 
 ## Delivery Workflow and Quality Gates
 
-All pull requests MUST satisfy the following gates:
+All pull requests MUST satisfy the following core gates:
 - Type safety gate: strict TypeScript check passes.
 - Security gate: Supabase RLS and role usage impact documented for schema/API changes.
 - Quality gate: unit and integration tests pass in CI.
-- Runtime gate: Docker build and container startup validation pass.
 - Review gate: at least one reviewer confirms constitution compliance checklist items.
 
+The following non-functional gates are RECOMMENDED and MAY be deferred through the Deadline
+Waiver Process:
+- Runtime observability gate: health/readiness signals for new runtime paths.
+- Docker reproducibility gate: Docker build/start validation.
+- Performance gate: explicit benchmark validation against target SLOs.
+
 Release readiness reviews MUST include rollback instructions and a short verification checklist
-for vote submission and vote counting paths.
+for vote submission and vote counting paths, including any approved deferrals.
+
+## Deadline Waiver Process
+
+When deadline pressure requires reduced non-functional scope, teams MAY defer the recommended
+non-functional gates only if all items below are documented in the feature plan/tasks:
+- Waiver scope: exact deferred requirement(s) and affected files/routes.
+- Risk statement: expected impact and fallback/rollback notes.
+- Owner: single accountable engineer.
+- Due date: remediation deadline in ISO format.
+- Tracking link: task/issue reference for follow-up completion.
+
+Security, type safety, and automated test core gates MUST NOT be waived.
 
 ## Governance
 
@@ -96,8 +113,10 @@ Amendment procedure:
 
 Compliance review expectations:
 - Every feature plan MUST include a Constitution Check section mapped to these principles.
-- Every task list MUST include explicit tasks for tests, security controls, and Docker validation.
+- Every task list MUST include explicit tasks for tests and security controls; non-functional
+	observability and Docker tasks SHOULD exist unless deferred via Deadline Waiver Process.
 - Periodic audits MAY sample merged work for compliance; repeated violations MUST trigger
 	corrective actions before new feature merges.
+- Any approved waiver MUST be closed by its due date or escalated in the next planning cycle.
 
-**Version**: 1.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date not found | **Last Amended**: 2026-03-11
+**Version**: 2.0.0 | **Ratified**: TODO(RATIFICATION_DATE): original adoption date not found | **Last Amended**: 2026-03-13

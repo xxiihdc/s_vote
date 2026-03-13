@@ -1,0 +1,568 @@
+openapi: 3.0.3
+info:
+  title: S Vote API - Create Vote Feature
+  description: |
+    API contracts for anonymous vote creation, response submission, and result viewing.
+    All timestamps are in UTC (ISO 8601 format).
+    
+    **Security Notes:**
+    - Passwords are verified server-side only; never transmitted unencrypted
+    - RLS policies prevent unauthorized access at database level
+    - All responses are CORS-enabled for public vote sharing
+  version: 1.0.0
+  contact:
+    name: S Vote Team
+  license:
+    name: MIT
+
+servers:
+  - url: https://s-vote.local
+    description: Production API
+  - url: http://localhost:3000
+    description: Local development
+
+tags:
+  - name: Votes
+    description: Vote creation and retrieval
+  - name: Voting
+    description: Vote submission and password verification
+  - name: Results
+    description: Vote results and analytics
+
+paths:
+  /api/votes:
+    post:
+      tags:
+        - Votes
+      summary: Create a new vote
+      description: |
+        Creates a new anonymous poll. Returns a unique shareable URL.
+        
+        **Authentication:** Not required (anonymous user).
+        
+        **Rate Limiting:** Max 10 votes per IP per minute.
+      operationId: createVote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - question
+                - options
+              properties:
+                question:
+                  type: string
+                  minLength: 3
+                  maxLength: 1000
+                  description: The polling question
+                  example: "What is your favorite programming language?"
+                options:
+                  type: array
+                  minItems: 2
+                  maxItems: 50
+                  items:
+                    type: string
+                    minLength: 1
+                    maxLength: 500
+                  description: Array of voting option texts
+                  example: ["TypeScript", "Python", "Go", "Rust"]
+                openTime:
+                  type: string
+                  format: date-time
+                  description: When voting opens (ISO 8601). Defaults to now.
+                  example: "2026-03-12T10:00:00Z"
+                closeTime:
+                  type: string
+                  format: date-time
+                  nullable: true
+                  description: When voting closes. Null means always open.
+                  example: "2026-03-12T18:00:00Z"
+                requiresPassword:
+                  type: boolean
+                  default: false
+                  description: If true, voters must enter password to vote
+                password:
+                  type: string
+                  maxLength: 255
+                  description: Password to protect vote (required if requiresPassword is true)
+                allowMultiple:
+                  type: boolean
+                  default: false
+                  description: If true, voters can select multiple options
+                expirationDays:
+                  type: integer
+                  minimum: 1
+                  maximum: 30
+                  default: 30
+                  description: Vote link expires after this many days
+      responses:
+        '201':
+          description: Vote created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    example: "550e8400-e29b-41d4-a716-446655440000"
+                  question:
+                    type: string
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        text:
+                          type: string
+                        order:
+                          type: integer
+                  shareUrl:
+                    type: string
+                    description: Relative URL path for sharing the vote
+                    example: "/votes/abc123xyz"
+                  createdAt:
+                    type: string
+                    format: date-time
+                  openTime:
+                    type: string
+                    format: date-time
+                  closeTime:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  expiresAt:
+                    type: string
+                    format: date-time
+                  allowMultiple:
+                    type: boolean
+                  requiresPassword:
+                    type: boolean
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["validation_error"]
+                  message:
+                    type: string
+                  details:
+                    type: object
+                    example:
+                      question: ["Minimum 3 characters required"]
+                      options: ["At least 2 options required"]
+        '429':
+          description: Rate limit exceeded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["rate_limit_exceeded"]
+                  message:
+                    type: string
+                  retryAfter:
+                    type: integer
+                    description: Seconds until next request allowed
+
+  /api/votes/{voteId}:
+    get:
+      tags:
+        - Votes
+      summary: Get vote details
+      description: |
+        Retrieves vote metadata for display. Does not require authentication or password verification.
+        
+        **Note:** Vote is only accessible if current time is between openTime and expiresAt.
+      operationId: getVote
+      parameters:
+        - name: voteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Vote found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  question:
+                    type: string
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        text:
+                          type: string
+                        order:
+                          type: integer
+                  requiresPassword:
+                    type: boolean
+                  allowMultiple:
+                    type: boolean
+                  openTime:
+                    type: string
+                    format: date-time
+                  closeTime:
+                    type: string
+                    format: date-time
+                    nullable: true
+                  isOpen:
+                    type: boolean
+                    description: Whether voting is currently allowed
+        '404':
+          description: Vote not found or expired
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["not_found"]
+                  message:
+                    type: string
+
+  /api/votes/{voteId}/verify-password:
+    post:
+      tags:
+        - Voting
+      summary: Verify vote password
+      description: |
+        Verifies the password for a password-protected vote. Returns a session token on success.
+        
+        **Rate Limiting:** Max 5 attempts per minute per IP.
+        
+        **Security:** Password is hashed server-side using bcrypt. Returns HTTP 401 without revealing if password is correct or vote exists.
+      operationId: verifyPassword
+      parameters:
+        - name: voteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  maxLength: 255
+      responses:
+        '200':
+          description: Password verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+                example: "vote_session=abc123xyz; HttpOnly; Secure; SameSite=Lax; Max-Age=86400"
+        '401':
+          description: Password incorrect or vote does not require password
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["unauthorized"]
+                  message:
+                    type: string
+        '429':
+          description: Too many failed attempts
+          headers:
+            Retry-After:
+              schema:
+                type: integer
+                description: Seconds to wait before retrying
+
+  /api/votes/{voteId}/respond:
+    post:
+      tags:
+        - Voting
+      summary: Submit a vote response
+      description: |
+        Records a voter's response to a vote. 
+        
+        **Authentication:** Not required (anonymous voting).
+        
+        **Duplicate Prevention:** System tracks voter by IP + browser fingerprint to prevent duplicate submissions.
+        
+        **Validation:**
+        - Vote must be open (openTime ≤ now ≤ closeTime)
+        - Selected options must exist in this vote
+        - If allowMultiple=false, exactly 1 option must be selected
+        - If vote requires password, voter must have valid session token
+      operationId: submitResponse
+      parameters:
+        - name: voteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - selectedOptionIds
+              properties:
+                selectedOptionIds:
+                  type: array
+                  minItems: 1
+                  maxItems: 50
+                  items:
+                    type: string
+                    format: uuid
+                  description: Array of selected option IDs
+      responses:
+        '201':
+          description: Response submitted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  responseId:
+                    type: string
+                    format: uuid
+                  message:
+                    type: string
+        '400':
+          description: Validation error (invalid options, timing, etc.)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["validation_error"]
+                  message:
+                    type: string
+                  details:
+                    type: object
+        '401':
+          description: |
+            Unauthorized:
+            - Password required but not verified
+            - Session token expired
+            - Vote requires authentication
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["unauthorized"]
+                  message:
+                    type: string
+        '409':
+          description: Conflict - duplicate vote detected
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["conflict"]
+                  message:
+                    type: string
+                    example: "You have already voted in this poll"
+        '410':
+          description: Vote no longer accepting responses (closed or expired)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["gone"]
+                  message:
+                    type: string
+
+  /api/votes/{voteId}/results:
+    get:
+      tags:
+        - Results
+      summary: Get vote results
+      description: |
+        Retrieves current vote results with option counts and percentages.
+        
+        **Access Control:** 
+        - Vote creator can always access
+        - Anonymous voters can access if vote allows public results
+        
+        **Real-Time:** Results update via Supabase Realtime; clients should subscribe to changes.
+      operationId: getResults
+      parameters:
+        - name: voteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Vote results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  voteId:
+                    type: string
+                    format: uuid
+                  question:
+                    type: string
+                  options:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuid
+                        text:
+                          type: string
+                        order:
+                          type: integer
+                        count:
+                          type: integer
+                          minimum: 0
+                        percentage:
+                          type: number
+                          minimum: 0
+                          maximum: 100
+                  totalResponses:
+                    type: integer
+                    minimum: 0
+                  isOpen:
+                    type: boolean
+                  allowMultiple:
+                    type: boolean
+        '403':
+          description: Not authorized to view results
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    enum: ["forbidden"]
+                  message:
+                    type: string
+        '404':
+          description: Vote not found
+
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Verifies API and database connectivity
+      operationId: healthCheck
+      responses:
+        '200':
+          description: All systems operational
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: ["ok"]
+                  timestamp:
+                    type: string
+                    format: date-time
+                  checks:
+                    type: object
+                    properties:
+                      database:
+                        type: string
+                        enum: ["ok", "failed"]
+                      supabaseRealtime:
+                        type: string
+                        enum: ["ok", "failed"]
+        '503':
+          description: One or more systems unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    enum: ["degraded", "down"]
+                  checks:
+                    type: object
+
+components:
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+      example: "550e8400-e29b-41d4-a716-446655440000"
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: Optional authentication for vote creator operations
+
+security:
+  - bearerAuth: []
+
+x-spec-version: 1.0.0
+x-feature-branch: 002-feature-create-vote

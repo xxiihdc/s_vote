@@ -37,14 +37,15 @@ Verify:
 
 ## 5. Apply Migrations and Deploy Edge Functions
 ```bash
-supabase db push
+npm run supabase:db:reset:local
 supabase functions deploy admin-task
 ```
 
 ## 5.1 Supabase CLI Operational Checklist
 - Ensure `supabase/config.toml` exists and project is initialized.
 - Authenticate CLI and select correct project ref.
-- Run `supabase db push` before deploying edge functions when schema changes exist.
+- Use `npm run supabase:db:reset:local` or `supabase migration up --local` for local migration apply.
+- Run `npm run supabase:db:push` only after `supabase link --project-ref <project-ref>` when pushing migrations to a hosted project.
 - Deploy functions with explicit function name (`admin-task`).
 - Verify function secrets are set server-side (especially `SUPABASE_SERVICE_ROLE_KEY`).
 - Never place service-role credentials in frontend env files.

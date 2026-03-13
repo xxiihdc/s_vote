@@ -18,7 +18,7 @@ automated validation tasks.
 - **[P]**: Can run in parallel (different files, no dependencies)
 - **[Story]**: Which user story this task belongs to (e.g., US1, US2, US3)
 - Include exact file paths in descriptions
-- Include constitution tags when relevant: `[Security]`, `[Observability]`, `[Docker]`
+- Include constitution tags when relevant: `[Security]`, `[Observability]`, `[Docker]`, `[Waiver]`
 
 ## Path Conventions
 
@@ -165,6 +165,7 @@ Examples of foundational tasks (adjust based on your project):
 - [ ] TXXX Security hardening
 - [ ] TXXX Docker build/start validation in CI
 - [ ] TXXX Run quickstart.md validation
+- [ ] TXXX [Waiver] Document deferred non-functional work with owner + due date + tracking issue
 
 ---
 
@@ -258,3 +259,5 @@ With multiple developers:
 - Commit after each task or logical group
 - Stop at any checkpoint to validate story independently
 - Avoid: vague tasks, same file conflicts, cross-story dependencies that break independence
+- For deadline-constrained delivery, non-functional observability/docker/performance tasks MAY be
+  deferred only when a `[Waiver]` task records scope, owner, due date, and tracking link.

@@ -45,6 +45,14 @@ else
   exit 1
 fi
 
+echo "  Verifying token share flow tests..."
+if npm run test -- tests/integration/token-sharing.integration.test.ts tests/integration/token-results.integration.test.ts; then
+  pass "Token share flow"
+else
+  fail "Token share flow tests failed"
+  exit 1
+fi
+
 # ---- 4. Next.js build ----
 echo "4/5  Next.js build..."
 if npm run build; then

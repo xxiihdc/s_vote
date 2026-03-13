@@ -16,7 +16,8 @@
     "test:coverage": "vitest run --coverage",
     "test:all": "npm run typecheck && npm run lint && npm run test",
     "test:regression": "npm run test:all && bash tests/integration/vercel-build.test.sh",
-    "supabase:db:push": "supabase db push",
+    "supabase:db:reset:local": "supabase db reset",
+    "supabase:db:push": "supabase db push --linked",
     "supabase:function:deploy": "supabase functions deploy admin-task",
     "ci:check": "bash scripts/ci-check.sh"
   },

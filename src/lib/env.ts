@@ -9,11 +9,14 @@ const envSchema = z.object({
   NEXT_PUBLIC_SUPABASE_ANON_KEY: z
     .string()
     .min(1, 'NEXT_PUBLIC_SUPABASE_ANON_KEY is required'),
+  SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
   VERCEL_PROJECT_ID: z.string().optional(),
   VERCEL_ORG_ID: z.string().optional(),
   LOG_LEVEL: z
     .enum(['debug', 'info', 'warn', 'error'])
     .default('info'),
+  RESULT_TOKEN_EXPIRATION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  RESULT_TOKEN_REFRESH_INTERVAL_MS: z.coerce.number().int().min(1000).max(60000).default(15000),
 })
 
 export type EnvConfig = z.infer<typeof envSchema>
@@ -24,9 +27,12 @@ function parseEnv(): EnvConfig {
     APP_URL: process.env.APP_URL ?? 'http://localhost:3000',
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+    SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID,
     VERCEL_ORG_ID: process.env.VERCEL_ORG_ID,
     LOG_LEVEL: process.env.LOG_LEVEL,
+    RESULT_TOKEN_EXPIRATION_DAYS: process.env.RESULT_TOKEN_EXPIRATION_DAYS,
+    RESULT_TOKEN_REFRESH_INTERVAL_MS: process.env.RESULT_TOKEN_REFRESH_INTERVAL_MS,
   })
 
   if (!result.success) {
