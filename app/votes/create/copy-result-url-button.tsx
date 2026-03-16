@@ -1,12 +1,14 @@
 'use client'
 
+import React from 'react'
 import { useState } from 'react'
 
 interface CopyResultUrlButtonProps {
   resultUrl: string
+  label?: string
 }
 
-export function CopyResultUrlButton({ resultUrl }: CopyResultUrlButtonProps) {
+export function CopyResultUrlButton({ resultUrl, label = 'Copy result URL' }: CopyResultUrlButtonProps) {
   const [copied, setCopied] = useState(false)
 
   async function onCopy() {
@@ -17,7 +19,7 @@ export function CopyResultUrlButton({ resultUrl }: CopyResultUrlButtonProps) {
 
   return (
     <button className="btn" type="button" onClick={onCopy} aria-live="polite">
-      {copied ? 'Copied' : 'Copy result URL'}
+      {copied ? 'Copied' : label}
     </button>
   )
 }

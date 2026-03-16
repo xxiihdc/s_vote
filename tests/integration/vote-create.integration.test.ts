@@ -33,7 +33,25 @@ describe('create vote integration flow', () => {
     form.set('question', 'Best language?')
     form.set('options', 'TypeScript\nPython')
 
-    await expect(createVoteAction(form)).rejects.toThrow('NEXT_REDIRECT:/votes/create?created=1&resultUrl=http%3A%2F%2Flocalhost%3A3000%2Fresults%2Ftoken_abc1234567890&tokenExpiresAt=2026-04-11T10%3A00%3A00.000Z')
+    try {
+      await createVoteAction(form)
+      throw new Error('Expected redirect to be thrown')
+    } catch (error) {
+      expect(error).toBeInstanceOf(Error)
+      const message = (error as Error).message
+      expect(message).toBe(
+        'NEXT_REDIRECT:/votes/create?created=1&voteUrl=http%3A%2F%2Flocalhost%3A3000%2Fvotes%2F550e8400-e29b-41d4-a716-446655440000&resultUrl=http%3A%2F%2Flocalhost%3A3000%2Fresults%2Ftoken_abc1234567890&tokenExpiresAt=2026-04-11T10%3A00%3A00.000Z'
+      )
+
+      const redirectUrl = message.replace('NEXT_REDIRECT:', '')
+      const search = redirectUrl.split('?')[1] ?? ''
+      const params = new URLSearchParams(search)
+      const voteUrl = params.get('voteUrl')
+
+      expect(voteUrl).toBe('http://localhost:3000/votes/550e8400-e29b-41d4-a716-446655440000')
+      expect(voteUrl).not.toContain('/results/')
+      expect(voteUrl).not.toContain('token_abc1234567890')
+    }
   })
 
   it('returns vote details from GET /api/votes/[voteId]', async () => {
