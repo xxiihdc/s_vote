@@ -3,6 +3,7 @@
 import { redirect } from 'next/navigation'
 import { createVote } from '@/lib/vote/service'
 import { parseCreateVotePayload } from '@/lib/vote/validate'
+import { buildVoteUrl } from '@/lib/vote/token'
 
 function toOptionalDate(value: FormDataEntryValue | null): Date | undefined | null {
   if (!value) return undefined
@@ -30,8 +31,10 @@ export async function createVoteAction(formData: FormData): Promise<void> {
     })
 
     const vote = await createVote(payload)
+    const voteUrl = buildVoteUrl(vote.voteId)
     const params = new URLSearchParams({
       created: '1',
+      voteUrl,
       resultUrl: vote.resultUrl,
       tokenExpiresAt: new Date(vote.tokenExpiresAt).toISOString(),
     })

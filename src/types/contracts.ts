@@ -131,6 +131,36 @@ export const CreateVoteResponseSchema = z.object({
 
 export type CreateVoteResponse = z.infer<typeof CreateVoteResponseSchema>
 
+export const CreateVoteRedirectSearchParamsSchema = z.object({
+  created: z.literal('1').optional(),
+  voteUrl: z.string().url().optional(),
+  resultUrl: z.string().url().optional(),
+  tokenExpiresAt: z.string().datetime().optional(),
+  error: z.string().optional(),
+})
+
+export type CreateVoteRedirectSearchParams = z.infer<typeof CreateVoteRedirectSearchParamsSchema>
+
+export function hasCompleteCreatedLinks(input: Partial<CreateVoteRedirectSearchParams>): boolean {
+  if (input.created !== '1') {
+    return false
+  }
+
+  const result = z
+    .object({
+      created: z.literal('1'),
+      voteUrl: z.string().url(),
+      resultUrl: z.string().url(),
+    })
+    .safeParse({
+      created: input.created,
+      voteUrl: input.voteUrl,
+      resultUrl: input.resultUrl,
+    })
+
+  return result.success
+}
+
 export const TokenResultItemSchema = z.object({
   optionId: z.string().uuid(),
   label: z.string().min(1).max(300),

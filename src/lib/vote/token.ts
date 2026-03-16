@@ -30,14 +30,22 @@ export function normalizeResultToken(value: string): string | null {
   return token
 }
 
-export function buildResultUrl(token: string): string {
-  const base = (() => {
+export function getCanonicalAppUrl(): string {
+  return (() => {
     try {
       return getEnv().APP_URL
     } catch {
       return process.env.APP_URL ?? 'http://localhost:3000'
     }
   })().replace(/\/$/, '')
+}
 
+export function buildVoteUrl(voteId: string): string {
+  const base = getCanonicalAppUrl()
+  return `${base}/votes/${voteId}`
+}
+
+export function buildResultUrl(token: string): string {
+  const base = getCanonicalAppUrl()
   return `${base}/results/${token}`
 }
