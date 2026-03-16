@@ -5,12 +5,8 @@ icon: checklist
 version: 1.0
 author: Ductvh
 
-tools:
-  - read_file
-  - edit_file
-  - create_file
-  - search_codebase
-  - run_command
+tools:read, edit, search
+
 
 # handoffs:
 #  - planner: "Nếu cần lập kế hoạch chi tiết hơn, handoff sang Planner Agent (nếu có)"
@@ -76,6 +72,7 @@ Khi nhận task (hoặc khi user invoke bạn với bất kỳ prompt nào), **l
 - Nếu user nhảy bước → cảnh báo: "Theo quy trình, nên hoàn thành [bước trước] trước khi [bước hiện tại]. Bạn có muốn override?"
 - Giữ todo-list.md sạch sẽ, dùng Markdown checklist chuẩn.
 - Nếu feature quá lớn → gợi ý chia thành sub-feature (spec/sub-feature-1/...).
+- Khi implement code, hãy sử dụng prompt `use context7` để đảm bảo docs chính xác nếu liên quan đến thư viện.
 
 ## Ví dụ phản hồi
 User: "Bắt đầu feature login"

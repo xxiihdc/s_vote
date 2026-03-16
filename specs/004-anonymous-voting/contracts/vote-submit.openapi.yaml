@@ -1,0 +1,217 @@
+openapi: "3.1.0"
+info:
+  title: Anonymous Vote Submission API
+  version: "1.0.0"
+  description: |
+    API contract for submitting and changing votes anonymously.
+    No authentication is required. IP-based deduplication is enforced server-side.
+    Raw IP addresses are never stored or returned.
+
+paths:
+  /api/votes/{voteId}/responses:
+    post:
+      operationId: submitVote
+      summary: Submit or change an anonymous vote
+      description: |
+        Submit a vote for an option (or list of options) on the specified poll.
+
+        **Deduplication**: One vote per IP address per poll is enforced server-side.
+        - If no prior vote exists from this IP → a new vote is created (201 Created).
+        - If a prior vote exists and the selection changed → the vote is updated (200 OK, action: "updated").
+        - If a prior vote exists and the selection is identical → no change (200 OK, action: "unchanged").
+
+        **No client-side flag is required** to signal a change — the server detects intent automatically.
+      parameters:
+        - name: voteId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The UUID of the poll to vote on.
+        - name: x-correlation-id
+          in: header
+          required: false
+          schema:
+            type: string
+          description: Optional client-supplied correlation ID for tracing.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VoteSubmission"
+            examples:
+              single_selection:
+                summary: Vote with a single option
+                value:
+                  selectedOptionIds:
+                    - "550e8400-e29b-41d4-a716-446655440001"
+              multiple_selections:
+                summary: Vote with multiple options (allowMultiple poll)
+                value:
+                  selectedOptionIds:
+                    - "550e8400-e29b-41d4-a716-446655440001"
+                    - "550e8400-e29b-41d4-a716-446655440002"
+      responses:
+        "201":
+          description: Vote successfully created (first submission from this IP).
+          headers:
+            x-correlation-id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteSubmissionResponse"
+              example:
+                action: "created"
+                voteId: "550e8400-e29b-41d4-a716-446655440000"
+                selectedOptionIds:
+                  - "550e8400-e29b-41d4-a716-446655440001"
+        "200":
+          description: |
+            Vote already existed from this IP. Selection was either updated or is unchanged.
+          headers:
+            x-correlation-id:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteSubmissionResponse"
+              examples:
+                updated:
+                  summary: Vote selection was changed
+                  value:
+                    action: "updated"
+                    voteId: "550e8400-e29b-41d4-a716-446655440000"
+                    selectedOptionIds:
+                      - "550e8400-e29b-41d4-a716-446655440002"
+                unchanged:
+                  summary: Same selection submitted again
+                  value:
+                    action: "unchanged"
+                    voteId: "550e8400-e29b-41d4-a716-446655440000"
+                    selectedOptionIds:
+                      - "550e8400-e29b-41d4-a716-446655440001"
+        "400":
+          description: Request validation failed (malformed payload or invalid option UUIDs).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteSubmissionError"
+              example:
+                error: "validation_error"
+                message: "selectedOptionIds: each selectedOptionId must be a valid UUID"
+        "404":
+          description: Poll not found or does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteSubmissionError"
+              example:
+                error: "vote_not_found"
+                message: "Vote not found"
+        "422":
+          description: |
+            Poll is closed, expired, or submission rejected due to business rule violation
+            (e.g., option does not belong to the poll, multiple selections on a single-choice poll).
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteSubmissionError"
+              examples:
+                vote_closed:
+                  summary: Poll is closed or expired
+                  value:
+                    error: "vote_closed"
+                    message: "Voting has ended for this poll"
+                invalid_options:
+                  summary: Option does not belong to this poll
+                  value:
+                    error: "invalid_options"
+                    message: "One or more selected options do not belong to this poll"
+        "500":
+          description: Internal server error.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VoteSubmissionError"
+              example:
+                error: "internal_error"
+                message: "Failed to submit vote"
+
+components:
+  schemas:
+    VoteSubmission:
+      type: object
+      required:
+        - selectedOptionIds
+      properties:
+        selectedOptionIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          description: |
+            UUIDs of the option(s) selected by the voter.
+            Must contain at least one item.
+            For single-choice polls (`allowMultiple: false`), must contain exactly one item.
+          example:
+            - "550e8400-e29b-41d4-a716-446655440001"
+
+    VoteSubmissionResponse:
+      type: object
+      required:
+        - action
+        - voteId
+        - selectedOptionIds
+      properties:
+        action:
+          type: string
+          enum:
+            - created
+            - updated
+            - unchanged
+          description: |
+            What the server did with the submission:
+            - `created`: First vote from this IP — new record inserted.
+            - `updated`: Prior vote from this IP existed — selection replaced.
+            - `unchanged`: Prior vote from this IP had the same selection — no change.
+        voteId:
+          type: string
+          format: uuid
+          description: The UUID of the poll.
+        selectedOptionIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+          minItems: 1
+          description: The option IDs now recorded for this voter.
+
+    VoteSubmissionError:
+      type: object
+      required:
+        - error
+        - message
+      properties:
+        error:
+          type: string
+          enum:
+            - vote_not_found
+            - vote_closed
+            - invalid_options
+            - missing_options
+            - validation_error
+            - internal_error
+          description: Machine-readable error code.
+        message:
+          type: string
+          description: Human-readable error description. Safe to display to users.
+
+  securitySchemes: {}
+
+security: []

@@ -149,6 +149,38 @@ export const TokenResultsResponseSchema = z.object({
 
 export type TokenResultsResponse = z.infer<typeof TokenResultsResponseSchema>
 
+export const VoteSubmissionSchema = z.object({
+  selectedOptionIds: z.array(z.string().uuid()).min(1),
+})
+
+export type VoteSubmission = z.infer<typeof VoteSubmissionSchema>
+
+export const VoteSubmissionActionSchema = z.enum(['created', 'updated', 'unchanged'])
+
+export type VoteSubmissionAction = z.infer<typeof VoteSubmissionActionSchema>
+
+export const VoteSubmissionResponseSchema = z.object({
+  action: VoteSubmissionActionSchema,
+  voteId: z.string().uuid(),
+  selectedOptionIds: z.array(z.string().uuid()).min(1),
+})
+
+export type VoteSubmissionResponse = z.infer<typeof VoteSubmissionResponseSchema>
+
+export const VoteSubmissionErrorSchema = z.object({
+  error: z.enum([
+    'vote_not_found',
+    'vote_closed',
+    'invalid_options',
+    'missing_options',
+    'validation_error',
+    'internal_error',
+  ]),
+  message: z.string(),
+})
+
+export type VoteSubmissionError = z.infer<typeof VoteSubmissionErrorSchema>
+
 export const ApiErrorSchema = z.object({
   error: z.string(),
   message: z.string(),

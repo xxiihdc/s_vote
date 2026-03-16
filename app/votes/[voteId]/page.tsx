@@ -1,6 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getVoteById } from '@/lib/vote/service'
+import { VoteForm } from './vote-form'
 
 interface VotePageProps {
   params: Promise<{ voteId: string }>
@@ -26,6 +27,13 @@ export default async function VotePage({ params }: VotePageProps) {
           <li key={option.id}>{option.text}</li>
         ))}
       </ul>
+
+      <VoteForm
+        voteId={vote.id}
+        options={vote.options}
+        allowMultiple={vote.allowMultiple}
+        isOpen={vote.isOpen}
+      />
 
       <p>
         Share link: <code>/votes/{vote.id}</code>

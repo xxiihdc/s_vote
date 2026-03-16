@@ -1,8 +1,8 @@
-import { createServerSupabaseClient } from '@/lib/supabase/server'
+import { createServerSupabaseClient, createServiceRoleSupabaseClient } from '@/lib/supabase/server'
 import type { CreateVoteRequest, TokenResultsResponse, VoteOption } from '@/types/contracts'
 import { hashVotePassword } from '@/lib/vote/password'
 import { computeExpiresAt, getVoteTimingState } from '@/lib/vote/timing'
-import { TokenLookupError, toVoteOptions } from '@/lib/vote/validate'
+import { TokenLookupError, VoteSubmitError, toVoteOptions } from '@/lib/vote/validate'
 import { buildResultUrl, generateResultToken, hashResultToken } from '@/lib/vote/token'
 import { canReadTokenResults, resolveTokenAccessState } from '@/lib/vote/token-access'
 import { getEnv } from '@/lib/env'
@@ -110,6 +110,10 @@ interface VoteResponseRow {
   selected_option_ids: string[]
 }
 
+interface VoteResponseWithFingerprintRow extends VoteResponseRow {
+  voter_fingerprint: string
+}
+
 interface TokenLookupVoteRow {
   id: string
   question: string
@@ -117,6 +121,131 @@ interface TokenLookupVoteRow {
   status: string
   token_expires_at: string
   updated_at: string
+}
+
+interface SubmitVoteInput {
+  voteId: string
+  selectedOptionIds: string[]
+  voterFingerprint: string
+}
+
+interface SubmitVoteResult {
+  action: 'created' | 'updated' | 'unchanged'
+  voteId: string
+  selectedOptionIds: string[]
+}
+
+function normalizeSelectedOptionIds(selectedOptionIds: string[]): string[] {
+  return [...new Set(selectedOptionIds)].sort((left, right) => left.localeCompare(right))
+}
+
+function areSameSelections(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) {
+    return false
+  }
+
+  return left.every((value, index) => value === right[index])
+}
+
+function ensureVoteCanAcceptSubmission(vote: VoteRow): void {
+  const timing = getVoteTimingState({
+    now: new Date(),
+    openTime: new Date(vote.open_time),
+    closeTime: vote.close_time ? new Date(vote.close_time) : null,
+    expiresAt: new Date(vote.expires_at),
+  })
+
+  if (vote.status !== 'active' || !timing.isOpen) {
+    throw new VoteSubmitError('vote_closed', 'Voting has ended for this poll')
+  }
+}
+
+function ensureSelectedOptionsBelongToVote(vote: VoteRow, selectedOptionIds: string[]): void {
+  if (selectedOptionIds.length === 0) {
+    throw new VoteSubmitError('missing_options', 'At least one option must be selected')
+  }
+
+  if (!vote.allow_multiple && selectedOptionIds.length !== 1) {
+    throw new VoteSubmitError('invalid_options', 'One or more selected options do not belong to this poll')
+  }
+
+  const allowedIds = new Set(vote.options.map((option) => option.id))
+  const allValid = selectedOptionIds.every((optionId) => allowedIds.has(optionId))
+
+  if (!allValid) {
+    throw new VoteSubmitError('invalid_options', 'One or more selected options do not belong to this poll')
+  }
+}
+
+async function getVoteForSubmission(voteId: string): Promise<VoteRow> {
+  const supabase = createServiceRoleSupabaseClient()
+  const { data, error } = await supabase.from('votes').select('*').eq('id', voteId).single()
+
+  if (error || !data) {
+    throw new VoteSubmitError('vote_not_found', 'Vote not found')
+  }
+
+  return data as VoteRow
+}
+
+export async function getExistingVoteResponse(voteId: string, voterFingerprint: string): Promise<string[] | null> {
+  const supabase = createServiceRoleSupabaseClient()
+  const { data, error } = await supabase
+    .from('vote_responses')
+    .select('selected_option_ids, voter_fingerprint')
+    .eq('vote_id', voteId)
+    .eq('voter_fingerprint', voterFingerprint)
+    .maybeSingle()
+
+  if (error) {
+    throw new Error(`Failed to load existing vote response: ${error.message}`)
+  }
+
+  if (!data) {
+    return null
+  }
+
+  return normalizeSelectedOptionIds((data as VoteResponseWithFingerprintRow).selected_option_ids)
+}
+
+export async function submitVote(input: SubmitVoteInput): Promise<SubmitVoteResult> {
+  const vote = await getVoteForSubmission(input.voteId)
+  ensureVoteCanAcceptSubmission(vote)
+
+  const normalizedSelectedOptionIds = normalizeSelectedOptionIds(input.selectedOptionIds)
+  ensureSelectedOptionsBelongToVote(vote, normalizedSelectedOptionIds)
+
+  const existingSelection = await getExistingVoteResponse(input.voteId, input.voterFingerprint)
+  if (existingSelection && areSameSelections(existingSelection, normalizedSelectedOptionIds)) {
+    return {
+      action: 'unchanged',
+      voteId: input.voteId,
+      selectedOptionIds: existingSelection,
+    }
+  }
+
+  const supabase = createServiceRoleSupabaseClient()
+  const { error } = await supabase.from('vote_responses').upsert(
+    {
+      vote_id: input.voteId,
+      voter_fingerprint: input.voterFingerprint,
+      selected_option_ids: normalizedSelectedOptionIds,
+      submitted_at: new Date().toISOString(),
+    },
+    {
+      onConflict: 'vote_id,voter_fingerprint',
+    }
+  )
+
+  if (error) {
+    throw new Error(`Failed to submit vote response: ${error.message}`)
+  }
+
+  return {
+    action: existingSelection ? 'updated' : 'created',
+    voteId: input.voteId,
+    selectedOptionIds: normalizedSelectedOptionIds,
+  }
 }
 
 export async function getVoteResultsByToken(token: string): Promise<TokenResultsResponse> {
@@ -146,7 +275,8 @@ export async function getVoteResultsByToken(token: string): Promise<TokenResults
     throw new TokenLookupError('unavailable', 'Vote is not available')
   }
 
-  const { data: responseRows, error: responseError } = await supabase
+  const serviceRoleSupabase = createServiceRoleSupabaseClient()
+  const { data: responseRows, error: responseError } = await serviceRoleSupabase
     .from('vote_responses')
     .select('selected_option_ids')
     .eq('vote_id', vote.id)

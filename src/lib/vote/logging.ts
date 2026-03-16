@@ -27,3 +27,10 @@ export function logTokenCreate(event: string, context: Record<string, unknown>):
     ...context,
   })
 }
+
+export function logVoteSubmit(event: string, context: Record<string, unknown>): void {
+  logger.info(event, {
+    domain: 'vote-submit',
+    ...context,
+  })
+}
