@@ -6,10 +6,7 @@ version: 1.1
 author: Ductvh
 
 tools:
-  - read_file
-  - edit_file
-  - run_command
-  - search_codebase
+  - context7/*
 
 handoffs: [] 
 ---
