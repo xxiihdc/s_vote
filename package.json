@@ -29,6 +29,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@tailwindcss/postcss": "^4.2.1",
     "@testing-library/jest-dom": "^6",
     "@testing-library/react": "^16",
     "@types/node": "^22",
@@ -38,8 +39,10 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.12",
     "jsdom": "^26",
+    "postcss": "^8.5.8",
     "prettier": "^3.5.0",
     "supabase": "^2.78.1",
+    "tailwindcss": "^4.2.1",
     "typescript": "^5",
     "vitest": "^3.0.0"
   }
