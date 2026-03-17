@@ -10,6 +10,7 @@ interface VoteFormProps {
   allowMultiple: boolean
   isOpen: boolean
   unlockToken?: string | null
+  password?: string | null
   previouslySelectedOptionIds?: string[] | null
 }
 
@@ -30,6 +31,7 @@ export function VoteForm({
   allowMultiple,
   isOpen,
   unlockToken = null,
+  password = null,
   previouslySelectedOptionIds = null,
 }: VoteFormProps) {
   const initialSelection = useMemo(
@@ -76,9 +78,11 @@ export function VoteForm({
         headers: {
           'content-type': 'application/json',
           ...(unlockToken ? { 'x-vote-unlock-token': unlockToken } : {}),
+          ...(password ? { 'x-vote-password': password } : {}),
         },
         body: JSON.stringify({
           selectedOptionIds,
+          ...(password ? { password } : {}),
         }),
       })
 
