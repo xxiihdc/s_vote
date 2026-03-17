@@ -2,8 +2,9 @@ import { ZodError } from 'zod'
 import { NextResponse, type NextRequest } from 'next/server'
 import { generateCorrelationId } from '@/lib/correlation'
 import { extractClientIp, hashClientIp } from '@/lib/vote/ip'
-import { logVoteFailure, logVoteSubmit } from '@/lib/vote/logging'
-import { submitVote } from '@/lib/vote/service'
+import { logPasswordAccess, logVoteFailure, logVoteSubmit } from '@/lib/vote/logging'
+import { getVoteById, submitVote } from '@/lib/vote/service'
+import { readVoteUnlockTokenFromHeader, validateVoteUnlockToken } from '@/lib/vote/password-access'
 import {
   VoteSubmitError,
   parseVoteIdParam,
@@ -26,6 +27,21 @@ export async function POST(request: NextRequest, context: RouteContext) {
     const voteId = parseVoteIdParam(rawVoteId)
     voteIdForLog = voteId
     const payload = parseVoteSubmissionPayload(await request.json())
+
+    const vote = await getVoteById(voteId)
+    if (vote?.requiresPassword) {
+      const unlockToken = readVoteUnlockTokenFromHeader(request.headers)
+      const isUnlocked = validateVoteUnlockToken(voteId, unlockToken)
+
+      if (!isUnlocked) {
+        logPasswordAccess('vote.submit.protected_rejected', {
+          correlationId,
+          voteId,
+          elapsedMs: Date.now() - startedAt,
+        })
+        throw new VoteSubmitError('vote_protected', 'Password verification is required')
+      }
+    }
 
     const clientIp = extractClientIp(request)
     const voterFingerprint = hashClientIp(clientIp)

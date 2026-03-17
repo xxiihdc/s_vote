@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@/lib/vote/service', () => ({
   submitVote: vi.fn(),
+  getVoteById: vi.fn().mockResolvedValue({ id: '550e8400-e29b-41d4-a716-446655440000', requiresPassword: false }),
 }))
 
 import { POST } from '../../app/api/votes/[voteId]/responses/route'

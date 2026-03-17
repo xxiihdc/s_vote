@@ -200,6 +200,7 @@ export type VoteSubmissionResponse = z.infer<typeof VoteSubmissionResponseSchema
 export const VoteSubmissionErrorSchema = z.object({
   error: z.enum([
     'vote_not_found',
+    'vote_protected',
     'vote_closed',
     'invalid_options',
     'missing_options',
@@ -210,6 +211,34 @@ export const VoteSubmissionErrorSchema = z.object({
 })
 
 export type VoteSubmissionError = z.infer<typeof VoteSubmissionErrorSchema>
+
+export const PasswordVerifyRequestSchema = z.object({
+  password: z.string().min(1, 'Password is required').max(255, 'Password must be 255 characters or fewer'),
+})
+
+export type PasswordVerifyRequest = z.infer<typeof PasswordVerifyRequestSchema>
+
+export const PasswordVerifySuccessSchema = z.object({
+  authenticated: z.literal(true),
+  unlockToken: z.string().min(16),
+  expiresAt: z.string().datetime(),
+})
+
+export type PasswordVerifySuccess = z.infer<typeof PasswordVerifySuccessSchema>
+
+export const PasswordVerifyFailureSchema = z.object({
+  authenticated: z.literal(false),
+  message: z.string(),
+})
+
+export type PasswordVerifyFailure = z.infer<typeof PasswordVerifyFailureSchema>
+
+export const PasswordVerifyResponseSchema = z.union([
+  PasswordVerifySuccessSchema,
+  PasswordVerifyFailureSchema,
+])
+
+export type PasswordVerifyResponse = z.infer<typeof PasswordVerifyResponseSchema>
 
 export const ApiErrorSchema = z.object({
   error: z.string(),

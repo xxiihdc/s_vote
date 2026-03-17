@@ -25,6 +25,14 @@ interface VoteRow {
   status: 'active' | 'closed' | 'expired' | 'archived' | 'deleted'
 }
 
+interface VoteAccessGuardRow {
+  id: string
+  status: 'active' | 'closed' | 'expired' | 'archived' | 'deleted'
+  expires_at: string
+  requires_password: boolean
+  password_hash: string | null
+}
+
 function toCreateVoteResponse(row: VoteRow) {
   return {
     voteId: row.id,
@@ -104,6 +112,21 @@ export async function getVoteById(voteId: string) {
     isOpen: timing.isOpen,
     status: (data as VoteRow).status,
   }
+}
+
+export async function getVoteAccessGuard(voteId: string) {
+  const supabase = createServiceRoleSupabaseClient()
+  const { data, error } = await supabase
+    .from('votes')
+    .select('id,status,expires_at,requires_password,password_hash')
+    .eq('id', voteId)
+    .single()
+
+  if (error || !data) {
+    return null
+  }
+
+  return data as VoteAccessGuardRow
 }
 
 interface VoteResponseRow {
