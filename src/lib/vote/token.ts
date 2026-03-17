@@ -33,7 +33,7 @@ export function normalizeResultToken(value: string): string | null {
 export function getCanonicalAppUrl(): string {
   return (() => {
     try {
-      return getEnv().APP_URL
+      return process.env.APP_URL ?? getEnv().APP_URL
     } catch {
       return process.env.APP_URL ?? 'http://localhost:3000'
     }

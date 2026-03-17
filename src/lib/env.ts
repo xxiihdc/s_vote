@@ -21,6 +21,16 @@ const envSchema = z.object({
 
 export type EnvConfig = z.infer<typeof envSchema>
 
+function hideServiceRoleKey(env: EnvConfig): EnvConfig {
+  Object.defineProperty(env, 'SUPABASE_SERVICE_ROLE_KEY', {
+    value: env.SUPABASE_SERVICE_ROLE_KEY,
+    enumerable: false,
+    writable: false,
+    configurable: false,
+  })
+  return env
+}
+
 function parseEnv(): EnvConfig {
   const result = envSchema.safeParse({
     NODE_ENV: process.env.NODE_ENV,
@@ -42,7 +52,7 @@ function parseEnv(): EnvConfig {
     throw new Error(`Environment configuration is invalid:\n${issues}`)
   }
 
-  return result.data
+  return hideServiceRoleKey(result.data)
 }
 
 let _env: EnvConfig | null = null

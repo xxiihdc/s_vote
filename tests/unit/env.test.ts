@@ -7,6 +7,7 @@ const VALID_ENV = {
   NEXT_PUBLIC_SUPABASE_URL: 'https://abc.supabase.co',
   NEXT_PUBLIC_SUPABASE_ANON_KEY: 'test-anon-key',
   LOG_LEVEL: 'info',
+  SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
 }
 
 function setEnv(overrides: Partial<typeof VALID_ENV> = {}) {

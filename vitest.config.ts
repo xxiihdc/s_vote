@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./tests/setup.ts'],
     include: ['tests/**/*.test.ts', 'tests/**/*.test.tsx'],
+    unstubEnvs: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov'],
