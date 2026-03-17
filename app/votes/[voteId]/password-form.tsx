@@ -10,6 +10,7 @@ interface ProtectedVotePayload {
   options: VoteOption[]
   allowMultiple: boolean
   isOpen: boolean
+  previouslySelectedOptionIds?: string[] | null
 }
 
 interface PasswordFormProps {

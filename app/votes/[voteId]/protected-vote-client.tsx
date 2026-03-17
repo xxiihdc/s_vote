@@ -13,6 +13,7 @@ interface ProtectedVoteResponse {
   options: VoteOption[]
   allowMultiple: boolean
   isOpen: boolean
+  previouslySelectedOptionIds?: string[] | null
 }
 
 interface ProtectedVoteClientProps {
@@ -121,6 +122,7 @@ export function ProtectedVoteClient({ voteId }: ProtectedVoteClientProps) {
         isOpen={vote.isOpen}
         unlockToken={unlockToken}
         password={verifiedPassword}
+        previouslySelectedOptionIds={vote.previouslySelectedOptionIds ?? null}
       />
     </div>
   )

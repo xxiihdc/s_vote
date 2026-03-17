@@ -11,7 +11,7 @@ import {
   registerPasswordFailureAttempt,
 } from '@/lib/vote/password-rate-limit'
 import { isSupportedPasswordHash, verifyVotePassword } from '@/lib/vote/password'
-import { getVoteAccessGuard, getVoteById } from '@/lib/vote/service'
+import { getExistingVoteResponse, getVoteAccessGuard, getVoteById } from '@/lib/vote/service'
 import {
   parsePasswordVerifyPayload,
   parseVoteIdParam,
@@ -145,6 +145,8 @@ export async function POST(request: NextRequest, context: RouteContext) {
       )
     }
 
+    const previouslySelectedOptionIds = await getExistingVoteResponse(voteId, hashedIp)
+
     logPasswordAccess('vote.password.verified', {
       correlationId,
       voteId,
@@ -156,7 +158,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
         authenticated: true,
         unlockToken: unlock.token,
         expiresAt: unlock.expiresAt,
-        vote,
+        vote: {
+          ...vote,
+          previouslySelectedOptionIds,
+        },
       },
       {
         status: 200,

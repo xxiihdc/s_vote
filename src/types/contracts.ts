@@ -225,6 +225,7 @@ export const PasswordVerifySuccessSchema = z.object({
   expiresAt: z.string().datetime(),
   vote: VotePublicSchema.extend({
     isOpen: z.boolean(),
+    previouslySelectedOptionIds: z.array(z.string().uuid()).nullable().optional(),
   }),
 })
 
