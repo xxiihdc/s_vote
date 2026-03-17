@@ -34,3 +34,10 @@ export function logVoteSubmit(event: string, context: Record<string, unknown>): 
     ...context,
   })
 }
+
+export function logPasswordAccess(event: string, context: Record<string, unknown>): void {
+  logger.info(event, {
+    domain: 'vote-password',
+    ...context,
+  })
+}

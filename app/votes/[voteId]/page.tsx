@@ -1,6 +1,8 @@
+import React from 'react'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { getVoteById } from '@/lib/vote/service'
+import { ProtectedVoteClient } from './protected-vote-client'
 import { VoteForm } from './vote-form'
 
 interface VotePageProps {
@@ -14,6 +16,8 @@ export default async function VotePage({ params }: VotePageProps) {
   if (!vote || vote.status === 'expired') {
     notFound()
   }
+
+  const isProtectedVote = vote.requiresPassword
 
   return (
     <main className="page-container stack">
@@ -66,23 +70,31 @@ export default async function VotePage({ params }: VotePageProps) {
 
           <div className="stack">
             <h2 className="card-title">Options in this poll</h2>
-            <ul className="vote-preview-list">
-              {vote.options.map((option, index) => (
-                <li className="vote-preview-item" key={option.id}>
-                  <span className="vote-preview-index">{index + 1}</span>
-                  <span>{option.text}</span>
-                </li>
-              ))}
-            </ul>
+            {isProtectedVote ? (
+              <p className="muted">Options are shown after password verification for this page view.</p>
+            ) : (
+              <ul className="vote-preview-list">
+                {vote.options.map((option, index) => (
+                  <li className="vote-preview-item" key={option.id}>
+                    <span className="vote-preview-index">{index + 1}</span>
+                    <span>{option.text}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </section>
 
-        <VoteForm
-          voteId={vote.id}
-          options={vote.options}
-          allowMultiple={vote.allowMultiple}
-          isOpen={vote.isOpen}
-        />
+        {isProtectedVote ? (
+          <ProtectedVoteClient voteId={vote.id} />
+        ) : (
+          <VoteForm
+            voteId={vote.id}
+            options={vote.options}
+            allowMultiple={vote.allowMultiple}
+            isOpen={vote.isOpen}
+          />
+        )}
       </div>
 
       <section className="card stack">

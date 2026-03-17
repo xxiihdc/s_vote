@@ -20,3 +20,8 @@ export function verifyVotePassword(password: string, encodedHash: string): boole
   if (storedBuffer.length !== computedBuffer.length) return false
   return timingSafeEqual(storedBuffer, computedBuffer)
 }
+
+export function isSupportedPasswordHash(encodedHash: string): boolean {
+  const [salt, stored] = encodedHash.split(':')
+  return Boolean(salt && stored && /^[a-f0-9]+$/i.test(salt) && /^[a-f0-9]+$/i.test(stored))
+}

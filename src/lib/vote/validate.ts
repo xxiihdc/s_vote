@@ -3,8 +3,10 @@ import { randomUUID } from 'crypto'
 import { z } from 'zod'
 import {
   CreateVoteRequestSchema,
+  PasswordVerifyRequestSchema,
   VoteSubmissionSchema,
   type CreateVoteRequest,
+  type PasswordVerifyRequest,
   type VoteOption,
   type VoteSubmission,
 } from '@/types/contracts'
@@ -19,6 +21,7 @@ export interface VoteValidationError {
 export type TokenLookupErrorCode = 'malformed_token' | 'not_found' | 'expired' | 'unavailable'
 export type VoteSubmitErrorCode =
   | 'vote_not_found'
+  | 'vote_protected'
   | 'vote_closed'
   | 'invalid_options'
   | 'missing_options'
@@ -49,6 +52,10 @@ export function parseCreateVotePayload(payload: unknown): CreateVoteRequest {
 
 export function parseVoteSubmissionPayload(payload: unknown): VoteSubmission {
   return VoteSubmissionSchema.parse(payload)
+}
+
+export function parsePasswordVerifyPayload(payload: unknown): PasswordVerifyRequest {
+  return PasswordVerifyRequestSchema.parse(payload)
 }
 
 export function parseVoteIdParam(voteId: string): string {
@@ -129,6 +136,14 @@ export function toVoteSubmitResponse(error: VoteSubmitError): { status: number; 
           message: 'Voting has ended for this poll',
         },
       }
+    case 'vote_protected':
+      return {
+        status: 403,
+        body: {
+          error: 'vote_protected',
+          message: 'Password verification is required',
+        },
+      }
     case 'invalid_options':
       return {
         status: 422,
@@ -146,5 +161,32 @@ export function toVoteSubmitResponse(error: VoteSubmitError): { status: number; 
           message: 'At least one option must be selected',
         },
       }
+  }
+}
+
+export function toPasswordVerifyFailureResponse(reason: 'invalid_password' | 'rate_limited'): {
+  status: number
+  body: { authenticated: false; message: string }
+  headers?: Record<string, string>
+} {
+  if (reason === 'rate_limited') {
+    return {
+      status: 429,
+      body: {
+        authenticated: false,
+        message: 'Too many attempts. Please try again later.',
+      },
+      headers: {
+        'retry-after': '60',
+      },
+    }
+  }
+
+  return {
+    status: 401,
+    body: {
+      authenticated: false,
+      message: 'Incorrect password. Please try again.',
+    },
   }
 }

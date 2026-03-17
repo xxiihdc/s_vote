@@ -1,5 +1,6 @@
 'use client'
 
+import React from 'react'
 import { useMemo, useState } from 'react'
 import type { VoteOption } from '@/types/contracts'
 
@@ -8,6 +9,7 @@ interface VoteFormProps {
   options: VoteOption[]
   allowMultiple: boolean
   isOpen: boolean
+  unlockToken?: string | null
   previouslySelectedOptionIds?: string[] | null
 }
 
@@ -27,6 +29,7 @@ export function VoteForm({
   options,
   allowMultiple,
   isOpen,
+  unlockToken = null,
   previouslySelectedOptionIds = null,
 }: VoteFormProps) {
   const initialSelection = useMemo(
@@ -72,6 +75,7 @@ export function VoteForm({
         method: 'POST',
         headers: {
           'content-type': 'application/json',
+          ...(unlockToken ? { 'x-vote-unlock-token': unlockToken } : {}),
         },
         body: JSON.stringify({
           selectedOptionIds,
@@ -82,6 +86,10 @@ export function VoteForm({
       if (!response.ok) {
         const errorPayload = payload as { message?: string }
         setSubmitState('error')
+        if (response.status === 403) {
+          setMessage('Password verification is required. Please verify again.')
+          return
+        }
         setMessage(errorPayload.message ?? 'Unable to submit vote right now.')
         return
       }

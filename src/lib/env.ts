@@ -15,6 +15,7 @@ const envSchema = z.object({
   LOG_LEVEL: z
     .enum(['debug', 'info', 'warn', 'error'])
     .default('info'),
+  VOTE_UNLOCK_TOKEN_TTL_MS: z.coerce.number().int().min(5000).max(300000).default(120000),
   RESULT_TOKEN_EXPIRATION_DAYS: z.coerce.number().int().min(1).max(365).default(30),
   RESULT_TOKEN_REFRESH_INTERVAL_MS: z.coerce.number().int().min(1000).max(60000).default(5000),
 })
@@ -41,6 +42,7 @@ function parseEnv(): EnvConfig {
     VERCEL_PROJECT_ID: process.env.VERCEL_PROJECT_ID,
     VERCEL_ORG_ID: process.env.VERCEL_ORG_ID,
     LOG_LEVEL: process.env.LOG_LEVEL,
+    VOTE_UNLOCK_TOKEN_TTL_MS: process.env.VOTE_UNLOCK_TOKEN_TTL_MS,
     RESULT_TOKEN_EXPIRATION_DAYS: process.env.RESULT_TOKEN_EXPIRATION_DAYS,
     RESULT_TOKEN_REFRESH_INTERVAL_MS: process.env.RESULT_TOKEN_REFRESH_INTERVAL_MS,
   })
