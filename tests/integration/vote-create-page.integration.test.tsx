@@ -1,7 +1,6 @@
 import { describe, expect, it, vi, beforeEach, afterEach } from 'vitest'
 import { render, screen } from '@testing-library/react'
-import type { ReactNode } from 'react'
-import { createElement } from 'react'
+import React, { createElement, type ReactNode } from 'react'
 
 vi.mock('next/link', () => ({
   default: ({ href, children, ...props }: { href: string; children: ReactNode }) =>
@@ -9,6 +8,7 @@ vi.mock('next/link', () => ({
 }))
 
 import CreateVotePage from '../../app/votes/create/page'
+import { CreateVoteForm } from '../../app/votes/create/create-vote-form'
 
 describe('create vote page integration', () => {
   beforeEach(() => {
@@ -78,5 +78,45 @@ describe('create vote page integration', () => {
     render(ui)
 
     expect(screen.getByRole('alert')).toHaveTextContent('Unable to create vote. Please verify your input.')
+  })
+
+  it('renders field-level errors and preserves submitted values from action state', () => {
+    render(
+      <CreateVoteForm
+        initialState={{
+          message: 'Unable to create vote. Please correct the highlighted fields.',
+          errors: {
+            question: ['String must contain at least 3 character(s)'],
+            options: ['Array must contain at least 2 element(s)'],
+            closeTime: ['closeTime must be after openTime'],
+            password: ['password required when requiresPassword is true'],
+          },
+          values: {
+            question: 'Hi',
+            options: 'Only one option',
+            openTime: '2026-03-17T09:00',
+            closeTime: '2026-03-17T08:00',
+            expirationDays: '12',
+            allowMultiple: true,
+            requiresPassword: true,
+          },
+          submissionId: 'failed-submit-1',
+        }}
+      />
+    )
+
+    expect(screen.getByRole('alert')).toHaveTextContent('Unable to create vote. Please correct the highlighted fields.')
+    expect(screen.getByLabelText('Question')).toHaveValue('Hi')
+    expect(screen.getByLabelText('Options (one per line)')).toHaveValue('Only one option')
+    expect(screen.getByLabelText('Open time (optional)')).toHaveValue('2026-03-17T09:00')
+    expect(screen.getByLabelText('Close time (optional)')).toHaveValue('2026-03-17T08:00')
+    expect(screen.getByLabelText('Expiration days (1-30)')).toHaveValue(12)
+    expect(screen.getByLabelText('Allow multiple selections')).toBeChecked()
+    expect(screen.getByLabelText('Require password for voters')).toBeChecked()
+    expect(screen.getByLabelText('Password')).toHaveValue('')
+    expect(screen.getByText('String must contain at least 3 character(s)')).toBeInTheDocument()
+    expect(screen.getByText('Array must contain at least 2 element(s)')).toBeInTheDocument()
+    expect(screen.getByText('closeTime must be after openTime')).toBeInTheDocument()
+    expect(screen.getByText('password required when requiresPassword is true')).toBeInTheDocument()
   })
 })

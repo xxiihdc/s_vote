@@ -1,6 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
-import { createVoteAction } from './actions'
+import { CreateVoteForm } from './create-vote-form'
 import { CopyResultUrlButton } from './copy-result-url-button'
 import { hasCompleteCreatedLinks } from '@/types/contracts'
 
@@ -71,73 +71,7 @@ export default async function CreateVotePage({ searchParams }: CreateVotePagePro
         </section>
       ) : null}
 
-      {error ? (
-        <section className="card notice-error" role="alert">
-          Unable to create vote. Please verify your input.
-        </section>
-      ) : null}
-
-      <form className="card form-grid" action={createVoteAction}>
-        <div className="field">
-          <label htmlFor="question">Question</label>
-          <input id="question" name="question" required minLength={3} maxLength={1000} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="options">Options (one per line)</label>
-          <textarea id="options" name="options" required rows={6} />
-        </div>
-
-        <div className="field">
-          <label htmlFor="openTime">Open time (optional)</label>
-          <input id="openTime" name="openTime" type="datetime-local" />
-        </div>
-
-        <div className="field">
-          <label htmlFor="closeTime">Close time (optional)</label>
-          <input id="closeTime" name="closeTime" type="datetime-local" />
-        </div>
-
-        <div className="field">
-          <label htmlFor="expirationDays">Expiration days (1-30)</label>
-          <input
-            id="expirationDays"
-            name="expirationDays"
-            type="number"
-            min={1}
-            max={30}
-            defaultValue={30}
-          />
-        </div>
-
-        <div className="inline-field">
-          <label className="inline-field">
-            <input name="allowMultiple" type="checkbox" />
-            Allow multiple selections
-          </label>
-        </div>
-
-        <div className="inline-field">
-          <label className="inline-field">
-            <input name="requiresPassword" type="checkbox" />
-            Require password for voters
-          </label>
-        </div>
-
-        <div className="field">
-          <label htmlFor="password">Password</label>
-          <input id="password" name="password" type="password" maxLength={255} />
-        </div>
-
-        <div className="btn-row">
-          <button className="btn" type="submit">
-            Create vote
-          </button>
-          <Link className="btn-secondary" href="/">
-            Back to home
-          </Link>
-        </div>
-      </form>
+      <CreateVoteForm initialError={error} />
     </main>
   )
 }

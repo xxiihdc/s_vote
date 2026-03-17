@@ -7,6 +7,8 @@ author: Ductvh
 
 tools:
   - context7/*
+  - read
+  - edit
 
 handoffs: [] 
 ---

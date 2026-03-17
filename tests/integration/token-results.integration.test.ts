@@ -14,6 +14,7 @@ vi.mock('@/lib/vote/service', () => ({
 }))
 
 import { createVoteAction } from '../../app/votes/create/actions'
+import { initialCreateVoteFormState } from '../../app/votes/create/form-state'
 import { GET } from '../../app/api/votes/results/[token]/route'
 import { createVote, getVoteResultsByToken } from '@/lib/vote/service'
 import { TokenLookupError } from '@/lib/vote/validate'
@@ -34,7 +35,9 @@ describe('token results integration flow', () => {
     form.set('question', 'Best language?')
     form.set('options', 'TypeScript\nPython')
 
-    await expect(createVoteAction(form)).rejects.toThrow('NEXT_REDIRECT:/votes/create?created=1')
+    await expect(createVoteAction(initialCreateVoteFormState, form)).rejects.toThrow(
+      'NEXT_REDIRECT:/votes/create?created=1'
+    )
   })
 
   it('returns token results for valid token', async () => {

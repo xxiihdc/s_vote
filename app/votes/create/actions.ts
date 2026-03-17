@@ -1,9 +1,51 @@
 'use server'
 
 import { redirect } from 'next/navigation'
+import { ZodError } from 'zod'
 import { createVote } from '@/lib/vote/service'
-import { parseCreateVotePayload } from '@/lib/vote/validate'
+import { parseCreateVotePayload, toValidationError } from '@/lib/vote/validate'
 import { buildVoteUrl } from '@/lib/vote/token'
+import type { CreateVoteFormState, CreateVoteFormValues } from './form-state'
+
+function getSubmissionId(): string {
+  return `${Date.now()}`
+}
+
+function toStringValue(value: FormDataEntryValue | null): string {
+  return typeof value === 'string' ? value : ''
+}
+
+function readCreateVoteFormValues(formData: FormData): CreateVoteFormValues {
+  return {
+    question: toStringValue(formData.get('question')),
+    options: toStringValue(formData.get('options')),
+    openTime: toStringValue(formData.get('openTime')),
+    closeTime: toStringValue(formData.get('closeTime')),
+    expirationDays: toStringValue(formData.get('expirationDays')) || '30',
+    allowMultiple: formData.get('allowMultiple') === 'on',
+    requiresPassword: formData.get('requiresPassword') === 'on',
+  }
+}
+
+function buildValidationFailureState(formData: FormData, error: ZodError): CreateVoteFormState {
+  const validationError = toValidationError(error)
+
+  return {
+    message: 'Unable to create vote. Please correct the highlighted fields.',
+    errors: validationError.details,
+    values: readCreateVoteFormValues(formData),
+    submissionId: getSubmissionId(),
+  }
+}
+
+function buildGenericFailureState(formData: FormData): CreateVoteFormState {
+  return {
+    message: 'Unable to create vote right now. Please try again.',
+    errors: {},
+    values: readCreateVoteFormValues(formData),
+    submissionId: getSubmissionId(),
+  }
+}
 
 function toOptionalDate(value: FormDataEntryValue | null): Date | undefined | null {
   if (!value) return undefined
@@ -12,21 +54,25 @@ function toOptionalDate(value: FormDataEntryValue | null): Date | undefined | nu
   return new Date(stringValue)
 }
 
-export async function createVoteAction(formData: FormData): Promise<void> {
+export async function createVoteAction(
+  _previousState: CreateVoteFormState,
+  formData: FormData
+): Promise<CreateVoteFormState> {
   try {
+    const submittedValues = readCreateVoteFormValues(formData)
     const rawOptions = String(formData.get('options') ?? '')
       .split('\n')
       .map((value) => value.trim())
       .filter(Boolean)
 
     const payload = parseCreateVotePayload({
-      question: String(formData.get('question') ?? ''),
+      question: submittedValues.question,
       options: rawOptions,
       openTime: toOptionalDate(formData.get('openTime')) ?? undefined,
       closeTime: toOptionalDate(formData.get('closeTime')) ?? null,
-      requiresPassword: formData.get('requiresPassword') === 'on',
+      requiresPassword: submittedValues.requiresPassword,
       password: String(formData.get('password') ?? ''),
-      allowMultiple: formData.get('allowMultiple') === 'on',
+      allowMultiple: submittedValues.allowMultiple,
       expirationDays: Number(formData.get('expirationDays') ?? 30),
     })
 
@@ -44,6 +90,10 @@ export async function createVoteAction(formData: FormData): Promise<void> {
       throw error
     }
 
+    if (error instanceof ZodError) {
+      return buildValidationFailureState(formData, error)
+    }
+
     if (error instanceof Error) {
       console.error('createVoteAction failed', {
         message: error.message,
@@ -55,6 +105,6 @@ export async function createVoteAction(formData: FormData): Promise<void> {
       })
     }
 
-    redirect('/votes/create?error=invalid_input')
+    return buildGenericFailureState(formData)
   }
 }

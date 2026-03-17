@@ -14,6 +14,7 @@ vi.mock('@/lib/vote/service', () => ({
 }))
 
 import { createVoteAction } from '../../app/votes/create/actions'
+import { initialCreateVoteFormState } from '../../app/votes/create/form-state'
 import { createVote, getVoteById } from '@/lib/vote/service'
 import { GET } from '../../app/api/votes/[voteId]/route'
 
@@ -34,7 +35,7 @@ describe('create vote integration flow', () => {
     form.set('options', 'TypeScript\nPython')
 
     try {
-      await createVoteAction(form)
+      await createVoteAction(initialCreateVoteFormState, form)
       throw new Error('Expected redirect to be thrown')
     } catch (error) {
       expect(error).toBeInstanceOf(Error)
@@ -52,6 +53,64 @@ describe('create vote integration flow', () => {
       expect(voteUrl).not.toContain('/results/')
       expect(voteUrl).not.toContain('token_abc1234567890')
     }
+  })
+
+  it('returns field-level validation state for invalid submissions', async () => {
+    const form = new FormData()
+    form.set('question', 'Hi')
+    form.set('options', 'Only one option')
+    form.set('openTime', '2026-03-17T09:00')
+    form.set('closeTime', '2026-03-17T08:00')
+    form.set('requiresPassword', 'on')
+    form.set('password', '')
+    form.set('expirationDays', '31')
+    form.set('allowMultiple', 'on')
+
+    const result = await createVoteAction(initialCreateVoteFormState, form)
+
+    expect(result).toMatchObject({
+      message: 'Unable to create vote. Please correct the highlighted fields.',
+      values: {
+        question: 'Hi',
+        options: 'Only one option',
+        openTime: '2026-03-17T09:00',
+        closeTime: '2026-03-17T08:00',
+        expirationDays: '31',
+        allowMultiple: true,
+        requiresPassword: true,
+      },
+    })
+    expect(result?.errors.question).toContain('String must contain at least 3 character(s)')
+    expect(result?.errors.options).toContain('Array must contain at least 2 element(s)')
+    expect(result?.errors.closeTime).toContain('closeTime must be after openTime')
+    expect(result?.errors.password).toContain('password required when requiresPassword is true')
+    expect(result?.errors.expirationDays).toContain('Number must be less than or equal to 30')
+  })
+
+  it('returns generic form error state for unexpected failures', async () => {
+    vi.mocked(createVote).mockRejectedValue(new Error('database unavailable'))
+
+    const form = new FormData()
+    form.set('question', 'Best language?')
+    form.set('options', 'TypeScript\nPython')
+    form.set('requiresPassword', 'on')
+    form.set('password', 'top-secret')
+
+    const result = await createVoteAction(initialCreateVoteFormState, form)
+
+    expect(result).toMatchObject({
+      message: 'Unable to create vote right now. Please try again.',
+      errors: {},
+      values: {
+        question: 'Best language?',
+        options: 'TypeScript\nPython',
+        openTime: '',
+        closeTime: '',
+        expirationDays: '30',
+        allowMultiple: false,
+        requiresPassword: true,
+      },
+    })
   })
 
   it('returns vote details from GET /api/votes/[voteId]', async () => {
