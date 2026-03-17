@@ -27,6 +27,17 @@ export function TokenResultsClient({ token, refreshIntervalMs }: TokenResultsCli
   const [message, setMessage] = useState('Loading vote results...')
 
   const endpoint = useMemo(() => `/api/votes/results/${encodeURIComponent(token)}`, [token])
+  const refreshSeconds = useMemo(() => Math.max(1, Math.round(refreshIntervalMs / 1000)), [refreshIntervalMs])
+  const totalVotes = useMemo(() => data?.results.reduce((sum, result) => sum + result.votes, 0) ?? 0, [data])
+  const leadingResult = useMemo(
+    () =>
+      data?.results.reduce<TokenResultItem | null>(
+        (currentLeader, result) =>
+          !currentLeader || result.votes > currentLeader.votes ? result : currentLeader,
+        null
+      ) ?? null,
+    [data]
+  )
 
   const loadResults = useCallback(async () => {
     const response = await fetch(endpoint, { cache: 'no-store' })
@@ -78,13 +89,19 @@ export function TokenResultsClient({ token, refreshIntervalMs }: TokenResultsCli
   }, [loadResults, refreshIntervalMs])
 
   if (state === 'loading') {
-    return <section className="card">Loading vote results...</section>
+    return (
+      <section className="card stack results-shell" aria-live="polite">
+        <p className="eyebrow">Live results</p>
+        <p>{message}</p>
+      </section>
+    )
   }
 
   if (state === 'not-available') {
     return (
-      <section className="card notice-error" role="alert">
-        {message}
+      <section className="card stack notice-error results-shell" role="alert">
+        <p className="eyebrow">Live results</p>
+        <p>{message}</p>
       </section>
     )
   }
@@ -97,10 +114,41 @@ export function TokenResultsClient({ token, refreshIntervalMs }: TokenResultsCli
     )
   }
 
+  const formattedUpdatedAt = new Intl.DateTimeFormat('en-US', {
+    dateStyle: 'medium',
+    timeStyle: 'short',
+  }).format(new Date(data.updatedAt))
+
   return (
-    <section className="card stack">
-      <h1 className="page-title">{data.question}</h1>
-      {data.results.length === 0 ? <p className="muted">No responses yet.</p> : null}
+    <section className="card stack results-shell">
+      <header className="results-header">
+        <div className="stack">
+          <p className="eyebrow">Live results</p>
+          <h1 className="page-title">{data.question}</h1>
+          <p className="page-subtitle">Results refresh automatically every {refreshSeconds} seconds.</p>
+        </div>
+        <div className="live-pill" aria-label={`Auto refresh every ${refreshSeconds} seconds`}>
+          <span className="live-dot" aria-hidden="true" />
+          Live
+        </div>
+      </header>
+
+      <div className="results-summary-grid" aria-label="Result summary">
+        <article className="summary-stat">
+          <span>Total votes</span>
+          <strong>{totalVotes}</strong>
+        </article>
+        <article className="summary-stat">
+          <span>Options</span>
+          <strong>{data.results.length}</strong>
+        </article>
+        <article className="summary-stat">
+          <span>Current leader</span>
+          <strong>{leadingResult ? leadingResult.label : 'No leader yet'}</strong>
+        </article>
+      </div>
+
+      {data.results.length === 0 ? <p className="muted result-empty">No responses yet.</p> : null}
       <ul className="result-list">
         {data.results.map((result) => (
           <li className="result-item" key={result.optionId}>
@@ -116,7 +164,7 @@ export function TokenResultsClient({ token, refreshIntervalMs }: TokenResultsCli
           </li>
         ))}
       </ul>
-      <p className="muted">Last updated: {new Date(data.updatedAt).toISOString()}</p>
+      <p className="muted">Last updated: {formattedUpdatedAt}</p>
     </section>
   )
 }

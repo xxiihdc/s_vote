@@ -37,6 +37,7 @@ export function VoteForm({
   const [selectedOptionIds, setSelectedOptionIds] = useState<string[]>(initialSelection)
   const [submitState, setSubmitState] = useState<SubmitState>('idle')
   const [message, setMessage] = useState<string>('')
+  const selectionCount = selectedOptionIds.length
 
   const toggleSelection = (optionId: string) => {
     if (!allowMultiple) {
@@ -103,25 +104,54 @@ export function VoteForm({
   }
 
   return (
-    <section>
-      <h2>Cast your vote</h2>
-      {previouslySelectedOptionIds?.length ? <p>Your previous selection is pre-filled.</p> : null}
-      <fieldset disabled={!isOpen || submitState === 'submitting'}>
-        <legend>{allowMultiple ? 'Select one or more options' : 'Select one option'}</legend>
-        <ul>
+    <section className="card stack vote-form-card">
+      <div className="stack vote-form-header">
+        <div>
+          <h2 className="card-title">Cast your vote</h2>
+          <p className="muted">
+            {allowMultiple
+              ? 'Select one or more options before submitting.'
+              : 'Select one option before submitting.'}
+          </p>
+        </div>
+        <div className="vote-selection-summary" aria-live="polite">
+          <strong>{selectionCount}</strong>
+          <span>{selectionCount === 1 ? 'option selected' : 'options selected'}</span>
+        </div>
+      </div>
+
+      {previouslySelectedOptionIds?.length ? (
+        <p className="notice-inline notice-inline-success">Your previous selection is pre-filled.</p>
+      ) : null}
+
+      {!isOpen ? <p className="notice-inline notice-inline-error">Voting has ended for this poll.</p> : null}
+
+      <fieldset className="vote-fieldset" disabled={!isOpen || submitState === 'submitting'}>
+        <legend className="muted">{allowMultiple ? 'Select one or more options' : 'Select one option'}</legend>
+        <ul className="vote-option-list">
           {options.map((option) => {
             const checked = selectedOptionIds.includes(option.id)
             return (
               <li key={option.id}>
-                <label>
+                <label className={`vote-option-card ${checked ? 'is-selected' : ''}`}>
                   <input
+                    className="vote-option-control"
                     type={allowMultiple ? 'checkbox' : 'radio'}
                     name="vote-option"
                     value={option.id}
                     checked={checked}
                     onChange={() => toggleSelection(option.id)}
-                  />{' '}
-                  {option.text}
+                  />
+                  <span className="vote-option-copy">
+                    <strong>{option.text}</strong>
+                    <span className="muted">
+                      {checked
+                        ? 'Selected'
+                        : allowMultiple
+                          ? 'Tap to add or remove this option.'
+                          : 'Tap to choose this option.'}
+                    </span>
+                  </span>
                 </label>
               </li>
             )
@@ -129,11 +159,23 @@ export function VoteForm({
         </ul>
       </fieldset>
 
-      <button type="button" disabled={!isOpen || submitState === 'submitting'} onClick={submitVote}>
-        {submitState === 'submitting' ? 'Submitting...' : 'Submit vote'}
-      </button>
+      <div className="vote-action-row">
+        <button className="btn" type="button" disabled={!isOpen || submitState === 'submitting'} onClick={submitVote}>
+          {submitState === 'submitting' ? 'Submitting...' : 'Submit vote'}
+        </button>
+        <p className="muted">
+          {isOpen ? 'You can update your selection later from the same device.' : 'This poll is no longer accepting responses.'}
+        </p>
+      </div>
 
-      {message ? <p>{message}</p> : null}
+      {message ? (
+        <p
+          className={`notice-inline ${submitState === 'error' ? 'notice-inline-error' : 'notice-inline-success'}`}
+          role={submitState === 'error' ? 'alert' : 'status'}
+        >
+          {message}
+        </p>
+      ) : null}
     </section>
   )
 }

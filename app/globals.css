@@ -17,6 +17,7 @@ body {
 
 a {
   color: #1d4ed8;
+  text-underline-offset: 0.16em;
 }
 
 .page-container {
@@ -46,6 +47,7 @@ a {
   border: 1px solid #e2e8f0;
   border-radius: 14px;
   padding: 18px;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.04);
 }
 
 .card-title {
@@ -145,6 +147,297 @@ a {
   font-size: 0.9rem;
 }
 
+.eyebrow {
+  margin: 0;
+  color: #1d4ed8;
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.vote-hero {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.16), transparent 30%),
+    linear-gradient(135deg, #ffffff 0%, #eff6ff 100%);
+}
+
+.vote-hero-copy {
+  position: relative;
+  z-index: 1;
+}
+
+.status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.status-badge-success {
+  background: #dcfce7;
+  border-color: #86efac;
+  color: #166534;
+}
+
+.status-badge-neutral {
+  background: #e2e8f0;
+  border-color: #cbd5e1;
+  color: #334155;
+}
+
+.status-badge-info {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
+}
+
+.vote-page-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+  align-items: start;
+}
+
+.vote-info-list,
+.vote-preview-list,
+.vote-option-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.vote-info-list,
+.vote-option-list {
+  display: grid;
+  gap: 12px;
+}
+
+.vote-info-item {
+  display: grid;
+  gap: 4px;
+  padding: 14px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fbff;
+}
+
+.vote-info-item strong,
+.vote-preview-item,
+.vote-option-copy strong,
+.summary-stat strong {
+  color: #0f172a;
+}
+
+.vote-info-item span {
+  color: #334155;
+  font-size: 0.92rem;
+}
+
+.vote-preview-list {
+  display: grid;
+  gap: 10px;
+}
+
+.vote-preview-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+}
+
+.vote-preview-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.vote-form-card,
+.results-shell {
+  gap: 18px;
+}
+
+.vote-form-header,
+.results-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.vote-selection-summary,
+.summary-stat,
+.live-pill {
+  border-radius: 12px;
+  border: 1px solid #dbeafe;
+  background: #f8fbff;
+}
+
+.vote-selection-summary {
+  min-width: 120px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+
+.vote-selection-summary strong {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.vote-selection-summary span {
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+.vote-fieldset {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: grid;
+  gap: 12px;
+}
+
+.vote-option-card {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #fff;
+  cursor: pointer;
+  transition:
+    border-color 140ms ease,
+    background-color 140ms ease,
+    transform 140ms ease,
+    box-shadow 140ms ease;
+}
+
+.vote-option-card:hover {
+  border-color: #93c5fd;
+  background: #f8fbff;
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px rgba(37, 99, 235, 0.08);
+}
+
+.vote-option-card.is-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.12);
+}
+
+.vote-option-control {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+}
+
+.vote-option-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.vote-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.notice-inline {
+  margin: 0;
+  padding: 12px 14px;
+  border-radius: 12px;
+  font-size: 0.94rem;
+  border-left: 4px solid transparent;
+}
+
+.notice-inline-success {
+  background: #f0fdf4;
+  border-left-color: #16a34a;
+  color: #166534;
+}
+
+.notice-inline-error {
+  background: #fef2f2;
+  border-left-color: #dc2626;
+  color: #991b1b;
+}
+
+.results-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.summary-stat {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+}
+
+.summary-stat span {
+  color: #475569;
+  font-size: 0.84rem;
+}
+
+.summary-stat strong {
+  font-size: 1.05rem;
+}
+
+.live-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  color: #1d4ed8;
+  font-size: 0.85rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.live-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  background: #2563eb;
+  box-shadow: 0 0 0 6px rgba(37, 99, 235, 0.12);
+}
+
+.result-empty {
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px dashed #cbd5e1;
+}
+
 .result-list {
   list-style: none;
   margin: 0;
@@ -155,8 +448,9 @@ a {
 
 .result-item {
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 10px;
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
 }
 
 .result-meta {
@@ -164,6 +458,8 @@ a {
   justify-content: space-between;
   gap: 10px;
   font-size: 0.92rem;
+  align-items: baseline;
+  flex-wrap: wrap;
 }
 
 .result-bar {
@@ -177,4 +473,28 @@ a {
 .result-bar-fill {
   height: 100%;
   background: #2563eb;
+}
+
+@media (max-width: 900px) {
+  .vote-page-grid,
+  .results-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .vote-form-header,
+  .results-header,
+  .vote-action-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .vote-selection-summary {
+    text-align: left;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .vote-option-card {
+    transition: none;
+  }
 }
