@@ -2,10 +2,20 @@
 
 import React from 'react'
 import { useState } from 'react'
+import type { VoteOption } from '@/types/contracts'
+
+interface ProtectedVotePayload {
+  id: string
+  question: string
+  options: VoteOption[]
+  allowMultiple: boolean
+  isOpen: boolean
+  previouslySelectedOptionIds?: string[] | null
+}
 
 interface PasswordFormProps {
   voteId: string
-  onVerified: (unlockToken: string) => Promise<void>
+  onVerified: (unlockToken: string, password: string, vote: ProtectedVotePayload) => Promise<void>
 }
 
 export function PasswordForm({ voteId, onVerified }: PasswordFormProps) {
@@ -36,16 +46,17 @@ export function PasswordForm({ voteId, onVerified }: PasswordFormProps) {
       const payload = (await response.json()) as {
         authenticated?: boolean
         unlockToken?: string
+        vote?: ProtectedVotePayload
         message?: string
       }
 
-      if (!response.ok || !payload.authenticated || !payload.unlockToken) {
+      if (!response.ok || !payload.authenticated || !payload.unlockToken || !payload.vote) {
         setMessage(payload.message ?? 'Unable to verify password.')
         return
       }
 
       setMessage('Password verified. Loading vote options...')
-      await onVerified(payload.unlockToken)
+      await onVerified(payload.unlockToken, password.trim(), payload.vote)
       setPassword('')
     } catch {
       setMessage('Unable to verify password.')
@@ -80,7 +91,7 @@ export function PasswordForm({ voteId, onVerified }: PasswordFormProps) {
           <button className="btn" type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Verifying...' : 'Verify password'}
           </button>
-          <p className="muted">You need to verify again if you refresh or reopen this page.</p>
+          <p className="muted">Password will be remembered on this browser to keep voting smooth.</p>
         </div>
       </form>
 

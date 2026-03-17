@@ -2,7 +2,7 @@
 
 import React from 'react'
 import Link from 'next/link'
-import { useActionState } from 'react'
+import { useActionState, useEffect, useState } from 'react'
 import { createVoteAction } from './actions'
 import { initialCreateVoteFormState, type CreateVoteFormState } from './form-state'
 
@@ -64,6 +64,13 @@ export function CreateVoteForm({
   const closeTimeError = getFieldError(state, 'closeTime')
   const passwordError = getFieldError(state, 'password')
   const expirationDaysError = getFieldError(state, 'expirationDays')
+  const [openTimeValue, setOpenTimeValue] = useState(values.openTime ?? '')
+  const [closeTimeValue, setCloseTimeValue] = useState(values.closeTime ?? '')
+
+  useEffect(() => {
+    setOpenTimeValue(values.openTime ?? '')
+    setCloseTimeValue(values.closeTime ?? '')
+  }, [state.submissionId, values.openTime, values.closeTime])
 
   return (
     <form key={state.submissionId ?? initialState.submissionId} className="card form-grid" action={formAction}>
@@ -118,7 +125,9 @@ export function CreateVoteForm({
           id="openTime"
           name="openTime"
           type="datetime-local"
-          defaultValue={values.openTime}
+          value={openTimeValue}
+          autoComplete="off"
+          onChange={(event) => setOpenTimeValue(event.target.value)}
           aria-invalid={openTimeError ? 'true' : 'false'}
           aria-describedby={getDescribedBy('openTime-error', Boolean(openTimeError))}
           className={openTimeError ? 'field-input-error' : undefined}
@@ -136,7 +145,9 @@ export function CreateVoteForm({
           id="closeTime"
           name="closeTime"
           type="datetime-local"
-          defaultValue={values.closeTime}
+          value={closeTimeValue}
+          autoComplete="off"
+          onChange={(event) => setCloseTimeValue(event.target.value)}
           aria-invalid={closeTimeError ? 'true' : 'false'}
           aria-describedby={getDescribedBy('closeTime-error', Boolean(closeTimeError))}
           className={closeTimeError ? 'field-input-error' : undefined}

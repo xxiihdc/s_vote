@@ -11,7 +11,7 @@ import {
   registerPasswordFailureAttempt,
 } from '@/lib/vote/password-rate-limit'
 import { isSupportedPasswordHash, verifyVotePassword } from '@/lib/vote/password'
-import { getVoteAccessGuard } from '@/lib/vote/service'
+import { getExistingVoteResponse, getVoteAccessGuard, getVoteById } from '@/lib/vote/service'
 import {
   parsePasswordVerifyPayload,
   parseVoteIdParam,
@@ -128,6 +128,24 @@ export async function POST(request: NextRequest, context: RouteContext) {
 
     clearPasswordFailureAttempts(limitKey)
     const unlock = issueVoteUnlockToken(voteId)
+    const vote = await getVoteById(voteId)
+
+    if (!vote) {
+      return NextResponse.json(
+        {
+          error: 'not_found',
+          message: 'Vote not found',
+        },
+        {
+          status: 404,
+          headers: {
+            'x-correlation-id': correlationId,
+          },
+        }
+      )
+    }
+
+    const previouslySelectedOptionIds = await getExistingVoteResponse(voteId, hashedIp)
 
     logPasswordAccess('vote.password.verified', {
       correlationId,
@@ -140,6 +158,10 @@ export async function POST(request: NextRequest, context: RouteContext) {
         authenticated: true,
         unlockToken: unlock.token,
         expiresAt: unlock.expiresAt,
+        vote: {
+          ...vote,
+          previouslySelectedOptionIds,
+        },
       },
       {
         status: 200,

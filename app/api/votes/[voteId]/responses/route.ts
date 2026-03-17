@@ -3,8 +3,9 @@ import { NextResponse, type NextRequest } from 'next/server'
 import { generateCorrelationId } from '@/lib/correlation'
 import { extractClientIp, hashClientIp } from '@/lib/vote/ip'
 import { logPasswordAccess, logVoteFailure, logVoteSubmit } from '@/lib/vote/logging'
-import { getVoteById, submitVote } from '@/lib/vote/service'
-import { readVoteUnlockTokenFromHeader, validateVoteUnlockToken } from '@/lib/vote/password-access'
+import { verifyVotePassword } from '@/lib/vote/password'
+import { getVoteAccessGuard, submitVote } from '@/lib/vote/service'
+import { readVotePasswordFromHeader, readVoteUnlockTokenFromHeader, validateVoteUnlockToken } from '@/lib/vote/password-access'
 import {
   VoteSubmitError,
   parseVoteIdParam,
@@ -28,10 +29,15 @@ export async function POST(request: NextRequest, context: RouteContext) {
     voteIdForLog = voteId
     const payload = parseVoteSubmissionPayload(await request.json())
 
-    const vote = await getVoteById(voteId)
-    if (vote?.requiresPassword) {
+    const vote = await getVoteAccessGuard(voteId)
+    if (vote?.requires_password) {
       const unlockToken = readVoteUnlockTokenFromHeader(request.headers)
-      const isUnlocked = validateVoteUnlockToken(voteId, unlockToken)
+      const passwordFromHeader = readVotePasswordFromHeader(request.headers)
+      const password = payload.password?.trim() || passwordFromHeader
+
+      const isUnlockedByToken = validateVoteUnlockToken(voteId, unlockToken)
+      const isUnlockedByPassword = Boolean(password && vote.password_hash && verifyVotePassword(password, vote.password_hash))
+      const isUnlocked = isUnlockedByToken || isUnlockedByPassword
 
       if (!isUnlocked) {
         logPasswordAccess('vote.submit.protected_rejected', {

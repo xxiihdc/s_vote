@@ -87,6 +87,15 @@ export function readVoteUnlockTokenFromHeader(headers: Headers): string | null {
   return raw
 }
 
+export function readVotePasswordFromHeader(headers: Headers): string | null {
+  const raw = headers.get('x-vote-password')?.trim()
+  if (!raw) {
+    return null
+  }
+
+  return raw
+}
+
 export function clearVoteUnlockSessionsForTest(): void {
   sessions.clear()
 }

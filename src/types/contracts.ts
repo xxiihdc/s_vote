@@ -181,6 +181,7 @@ export type TokenResultsResponse = z.infer<typeof TokenResultsResponseSchema>
 
 export const VoteSubmissionSchema = z.object({
   selectedOptionIds: z.array(z.string().uuid()).min(1),
+  password: z.string().min(1).max(255).optional(),
 })
 
 export type VoteSubmission = z.infer<typeof VoteSubmissionSchema>
@@ -222,6 +223,10 @@ export const PasswordVerifySuccessSchema = z.object({
   authenticated: z.literal(true),
   unlockToken: z.string().min(16),
   expiresAt: z.string().datetime(),
+  vote: VotePublicSchema.extend({
+    isOpen: z.boolean(),
+    previouslySelectedOptionIds: z.array(z.string().uuid()).nullable().optional(),
+  }),
 })
 
 export type PasswordVerifySuccess = z.infer<typeof PasswordVerifySuccessSchema>
